@@ -1,20 +1,16 @@
-#ifndef __HEAP__
-#define __HEAP__
+#pragma once
 
-#include "my_dll/dll.h"
+#include "my_ds/dll.h"
+#include "my_ds/heap.h"
 #include <stdbool.h>
-
-#define offsetof(container, field)  \
-    ((size_t)&(((container *)0)->field))
-
+#include <stddef.h>  
 
 struct struct_info;
 
-
 typedef struct block_meta {
     bool is_free;
-    unsigned block_size;
-    unsigned offset;
+    unsigned int block_size;
+    unsigned int offset;
     Node priority_node; 
     struct block_meta *prev_block;
     struct block_meta *next_block;
@@ -34,10 +30,11 @@ typedef struct struct_info {
     char struct_name[MM_MAX_STRUCT_NAME];
     unsigned struct_size;
     vm_page *first_page;
-    Node priority_free_block_head;  
+   
+    Heap free_blocks_heap;
 } struct_info;
 
-typedef struct sys_page{
+typedef struct sys_page {
     struct sys_page *next;
     struct_info struct_info_array[0];
 } sys_page;
@@ -52,21 +49,15 @@ typedef struct sys_page{
 
 #define ITERATE_STRUCT_INFO_END }
 
-
-#define ITERATE_VM_PAGES_BEGIN(info,curr){\
-    for(curr=info->firstPage;curr;curr=curr->next){
+#define ITERATE_VM_PAGES_BEGIN(info, curr) { \
+    for (curr = info->first_page; curr; curr = curr->next) {
 
 #define ITERATE_VM_PAGES_END }}
 
-
-#define ITERATE_META_BLOCKS_BEGIN(page,curr){\
-    for(curr=&page->block_meta_data;curr;curr=curr->next_block){
+#define ITERATE_META_BLOCKS_BEGIN(page, curr) { \
+    for (curr = &page->block_meta_data; curr; curr = curr->next_block) {
 
 #define ITERATE_META_BLOCKS_END }}
 
-
-
 void bind_allocated_and_free_blocks(block_meta *allocated_block, block_meta *free_block);
-void mark_vm_page_empty(vm_page *page) ;
-
-#endif
+void mark_vm_page_empty(vm_page *page);

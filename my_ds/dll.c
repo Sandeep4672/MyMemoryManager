@@ -1,7 +1,8 @@
 #include "dll.h"
 #include <stdlib.h>
-
-void init(Node* node){
+#include<stdio.h>
+void dll_init_node(Node* node){
+    if(!node)return;
     node->next=NULL;
     node->prev=NULL;
 }
@@ -19,29 +20,30 @@ void add_after(Node* curr,Node* newNode){
     curr->next=newNode;
 }
 
-void add_before(Node* curr, Node* newNode){
-    if(!curr->prev){
-        curr->prev = newNode;
-        newNode->next = curr;
-        return;
-    }
+void add_before(Node* curr, Node* newNode) {
+    if (!curr || !newNode) return;
 
-    newNode->prev = curr->prev;
-    curr->prev->next = newNode;
     newNode->next = curr;
+    newNode->prev = curr->prev;
+
+    if (curr->prev)
+        curr->prev->next = newNode;
     curr->prev = newNode;
 }
 
-void remove_node(Node* curr){
-    if(curr->prev)
-        curr->prev->next = curr->next;
 
-    if(curr->next)
+void remove_node(Node* curr) {
+    if (!curr) return;
+
+    if (curr->prev)
+        curr->prev->next = curr->next;
+    if (curr->next)
         curr->next->prev = curr->prev;
 
-    curr->next = NULL;
     curr->prev = NULL;
+    curr->next = NULL;
 }
+
 
 void add_last(Node* head, Node* newNode){
     Node* temp = head->next;
@@ -61,7 +63,7 @@ void add_last(Node* head, Node* newNode){
     }
 }
 
-unsigned int dll_size(Node* head) {
+unsigned int dll_size(const Node* head) {
     unsigned int count = 0;
     Node *temp = head->next;
     ITERATE_LIST_BEGIN(temp) {
@@ -86,9 +88,9 @@ void delete_dll(Node* head){
 }
 
 
-void priority_insert(Node* head,Node* newNode,int (*comp)(void*, void*),int offset) {
+void priority_insert(Node* head, Node* newNode, int (*comp)(void*, void*)) {
+    dll_init_node(newNode); 
 
-    init(newNode);
     Node* curr = head->next;
 
     if (!curr) {
@@ -97,19 +99,16 @@ void priority_insert(Node* head,Node* newNode,int (*comp)(void*, void*),int offs
     }
 
     while (curr) {
-        void* curr_struct = NODE_TO_CONTAINER_GIVEN_OFFSET(curr, offset);
-        void* new_struct  = NODE_TO_CONTAINER_GIVEN_OFFSET(newNode, offset);
-
-        if (comp(new_struct, curr_struct) == -1) {
+        if (comp(newNode, curr) == -1) {
             add_before(curr, newNode);
             return;
         }
-
         curr = curr->next;
     }
 
     Node* last = head;
-    while (last->next) last = last->next;
-
+    while (last->next) {
+        last = last->next;
+    }
     add_after(last, newNode);
 }
