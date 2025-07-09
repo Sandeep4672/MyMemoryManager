@@ -96,7 +96,7 @@ void register_struct_info(char *struct_name, unsigned int struct_size) {
     }
 
     strncpy(curr_struct_info->struct_name, struct_name, MM_MAX_STRUCT_NAME - 1);
-    curr_struct_info->struct_name[MM_MAX_STRUCT_NAME - 1] = '\0';  // Ensure null-termination
+    curr_struct_info->struct_name[MM_MAX_STRUCT_NAME - 1] = '\0';  
     curr_struct_info->struct_size = struct_size;
     curr_struct_info->first_page = NULL;
 
@@ -137,18 +137,15 @@ void print_registered_structs() {
 
 
 void bind_allocated_and_free_blocks(block_meta *allocated_block, block_meta *free_block) {
-    // Link free_block after allocated_block
     free_block->prev_block = allocated_block;
     free_block->next_block = allocated_block->next_block;
 
-    // Reconnect next block (if it exists) to point back to free_block
     if (free_block->next_block) {
         free_block->next_block->prev_block = free_block;
     }
 
     allocated_block->next_block = free_block;
 
-    // Mark it free and clear any dangling priority pointers
     free_block->is_free = true;
     dll_init_node(&allocated_block->priority_node);
 }
@@ -159,13 +156,10 @@ void bind_allocated_and_free_blocks(block_meta *allocated_block, block_meta *fre
 static void merge_free_blocks(block_meta *first, block_meta *second) {
     assert(first->is_free == true && second->is_free == true);
 
-    // Remove second's node from heap if it’s there (optional, depending on context)
-    dll_init_node(&second->priority_node);  // Always clean the node
+    dll_init_node(&second->priority_node); 
 
-    // Merge block sizes (include second’s metadata overhead)
     first->block_size += sizeof(block_meta) + second->block_size;
 
-    // Update linkages
     first->next_block = second->next_block;
     if (second->next_block) {
         second->next_block->prev_block = first;
@@ -176,7 +170,6 @@ static void merge_free_blocks(block_meta *first, block_meta *second) {
 static inline unsigned int get_max_allocatable_bytes(int units) {
     if (units <= 0) return 0;
 
-    // Returns max usable bytes in `units` system pages, subtracting metadata size
     return (unsigned int)(
         (SYSTEM_PAGE_SIZE * units) - offsetof(vm_page, page_memory)
     );
@@ -218,7 +211,6 @@ vm_page *allocate_vm_page(struct_info *info) {
     page->struct_info = info;
 
     if (!info->first_page) {
-        printf("This is my first page \n");
         info->first_page = page;
     } else {
         page->next = info->first_page;
@@ -290,7 +282,6 @@ void print_vm_page_details(vm_page* page) {
 
 static void add_free_block_to_priority_list(struct_info* info, block_meta* free_block) {
     assert(free_block->is_free == true);
-    printf("%u %p Priority List \n",free_block->block_size,&free_block->priority_node);
     heap_insert(&info->free_blocks_heap,&free_block->priority_node);
 }
 
@@ -302,8 +293,7 @@ struct_info_add_new_page(struct_info *info){
     if(!vm_page)
         return NULL;
 
-    /* The new page is like one free block, add it to the
-     * free block list*/
+   
     add_free_block_to_priority_list(
             info, &vm_page->block_meta_data);
 
@@ -316,10 +306,6 @@ get_biggest_free_block_meta(
         struct_info *info){
     Node *biggest_free_block =
         (info->free_blocks_heap).head.next;
-    if(!biggest_free_block)
-    printf("It is NULL \n");
-    else
-    printf("%p \n",biggest_free_block);
     if(biggest_free_block)
         return (block_meta*)NODE_TO_STRUCT(biggest_free_block,block_meta,priority_node);
 
@@ -348,8 +334,6 @@ split_free_data_block_for_allocation(
     curr_block_meta->block_size = size;
     Node* node=heap_extract_max(&info->free_blocks_heap);
     assert(node==&curr_block_meta->priority_node);
-    printf("After extraction \n");
-    print_priority_queue_of_struct_info(info);
     // curr_block_meta->offset stays the same
 
     if (remaining_size == 0) {
@@ -368,19 +352,14 @@ split_free_data_block_for_allocation(
     next_block_meta = (block_meta *)((char *)curr_block_meta + sizeof(block_meta) + size);
     next_block_meta->is_free = true;
     next_block_meta->block_size = remaining_size - sizeof(block_meta);
-    printf("%d is the size of new meta block\n with address %p \n",next_block_meta->block_size,next_block_meta);
     next_block_meta->offset = curr_block_meta->offset + sizeof(block_meta) + size;
 
     dll_init_node(&next_block_meta->priority_node);
     add_free_block_to_priority_list(info, next_block_meta);
-    printf("After adding to priority list check: \n");
     assert(&info->free_blocks_heap.head==next_block_meta->priority_node.prev);
 
-    print_priority_queue_of_struct_info(info);
     bind_allocated_and_free_blocks(curr_block_meta, next_block_meta);
-    printf("After binding check \n");
     assert(&info->free_blocks_heap.head==next_block_meta->priority_node.prev);
-    print_priority_queue_of_struct_info(info);
     return true;
 }
 
@@ -400,7 +379,6 @@ allocate_free_data_block(
             biggest_block_meta->block_size < req_size){
 
         page = struct_info_add_new_page(info);
-        print_priority_queue_of_struct_info(info);
         printf("%u \n",page->block_meta_data.block_size);
         /*Allocate the free block from this page now*/
         status = split_free_data_block_for_allocation(info,
@@ -413,7 +391,6 @@ allocate_free_data_block(
     }
     /*The biggest block meta data can satisfy the request*/
     if(biggest_block_meta){
-        printf("The biggest meta block is: %p \n",biggest_block_meta);
         status = split_free_data_block_for_allocation(info,
                 biggest_block_meta, req_size);
     }
@@ -511,7 +488,6 @@ void *xcalloc(char *struct_name, int units) {
     //print_meta_blocks_for_struct_info(info);
     //print_priority_queue_of_struct_info(info);
 
-    printf("%s \n",info->struct_name);
     if (!info) {
         printf("Error: Structure %s not registered with memory manager\n", struct_name);
         return NULL;
@@ -530,6 +506,87 @@ void *xcalloc(char *struct_name, int units) {
     }
 
     return NULL;
+}
+
+
+static int get_unused_memory_between_blocks(
+        block_meta *first,
+        block_meta *second){
+
+block_meta *next_block = (block_meta *)((char *)(first + 1) + first->block_size);
+    return (int)((unsigned long)second - (unsigned long)(next_block));
+}
+
+static block_meta *
+mm_free_blocks(block_meta *ptr){
+
+    block_meta *return_block = NULL;
+
+    assert(ptr->is_free == false);
+
+    vm_page *curr_page =((vm_page * )((char *)ptr - ptr->offset));
+
+
+    struct_info *curr_info = curr_page->struct_info;
+
+    return_block = ptr;
+
+    ptr->is_free = true;
+
+    block_meta *next_block = ptr->next_block;
+
+    /*Handling Hard IF memory*/
+    if(next_block){
+        /* Scenario 1 : When data block to be freed is not the last
+         * upper most meta block in a VM data page*/
+        ptr->block_size +=get_unused_memory_between_blocks(ptr,next_block);
+    }
+    else {
+        /* Scenario 2: Page Boundry condition*/
+        /* Block being freed is the upper most free data block
+         * in a VM data page, check of hard internal fragmented
+         * memory and merge*/
+        char *end_address_of_vm_page = (char *)((char *)curr_page + SYSTEM_PAGE_SIZE);
+        char *end_address_of_free_data_block =
+            (char *)(ptr + 1) + ptr->block_size;
+        int internal_mem_fragmentation = (int)((unsigned long)end_address_of_vm_page -
+                (unsigned long)end_address_of_free_data_block);
+        ptr->block_size += internal_mem_fragmentation;
+    }
+
+    /*Now perform Merging*/
+    if(next_block && next_block->is_free == true){
+        /*Union two free blocks*/
+        merge_free_blocks(ptr, next_block);
+        return_block = ptr;
+    }
+    /*Check the previous block if it was free*/
+    block_meta *prev_block = ptr->prev_block;
+
+    if(prev_block && prev_block->is_free){
+        merge_free_blocks(prev_block, ptr);
+        return_block = prev_block;
+    }
+
+    if(is_vm_page_empty(curr_page)){
+        delete_vm_page(curr_page);
+        return NULL;
+    }
+    add_free_block_to_priority_list(
+            curr_page->struct_info, return_block);
+
+    return return_block;
+}
+
+
+void
+xfree(void *ptr){
+
+    block_meta *block =
+        (block_meta *)((char *)ptr - sizeof(block_meta));
+
+    assert(block->is_free == false);
+    mm_free_blocks(block);
 }
 
 
@@ -562,12 +619,10 @@ void print_block_usage() {
                     if (block->is_free) {
                         free_block_count++;
 
-                        // Sanity: should exist in heap
                         assert(block->priority_node.next != NULL || block->priority_node.prev != NULL);
                     } else {
                         occupied_block_count++;
                         application_memory_usage += block->block_size + sizeof(block_meta);
-                        // Sanity: should not be in heap
                         assert(block->priority_node.next == NULL && block->priority_node.prev == NULL);
                     }
 
@@ -587,4 +642,60 @@ void print_block_usage() {
     }
 
     printf("--------------------------------------------------------------\n");
+}
+
+
+
+void print_memory_usage(const char *struct_name_filter) {
+    struct_info *info = NULL;
+    vm_page *page = NULL;
+    unsigned int total_pages = 0;
+    unsigned int family_count = 0;
+
+    printf("Page Size = %lu Bytes\n\n", SYSTEM_PAGE_SIZE);
+
+    sys_page *curr_sys_page = first_sys_page;
+
+    while (curr_sys_page) {
+        ITERATE_STRUCT_INFO_BEGIN(curr_sys_page, info) {
+
+            if (struct_name_filter && strcmp(struct_name_filter, info->struct_name) != 0)
+                continue;
+
+            family_count++;
+
+            printf("Structure: %s (Size: %u bytes)\n", info->struct_name, info->struct_size);
+
+            ITERATE_VM_PAGES_BEGIN(info, page) {
+                total_pages++;
+
+                printf("  VM Page at: %p (next: %p, prev: %p)\n", (void *)page, (void *)page->next, (void *)page->prev);
+                printf("  -----------------------------------------------------------------------------------------\n");
+                printf("  | Block# |     Block Addr     |   Status   | Size | Offset |      Prev      |     Next     |\n");
+                printf("  -----------------------------------------------------------------------------------------\n");
+
+                block_meta *blk;
+                unsigned int index = 0;
+
+                ITERATE_META_BLOCKS_BEGIN(page, blk) {
+                    printf("  | %-6u | %16p | %10s | %-4u | %-6u | %14p | %12p |\n",
+                           index++,
+                           (void *)blk,
+                           blk->is_free ? "FREE" : "ALLOCATED",
+                           blk->block_size,
+                           blk->offset,
+                           (void *)blk->prev_block,
+                           (void *)blk->next_block);
+                } ITERATE_META_BLOCKS_END(page, blk);
+
+                printf("  -----------------------------------------------------------------------------------------\n\n");
+
+            } ITERATE_VM_PAGES_END(info, page);
+
+        } ITERATE_STRUCT_INFO_END;
+        curr_sys_page = curr_sys_page->next;
+    }
+
+    printf("# Of VM Pages in Use : %u (%lu Bytes)\n", total_pages, total_pages * SYSTEM_PAGE_SIZE);
+    printf("Total Memory being used by Memory Manager = %lu Bytes\n", total_pages * SYSTEM_PAGE_SIZE);
 }

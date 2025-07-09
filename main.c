@@ -28,32 +28,17 @@ int main(int argc, char **argv) {
     emp_t *emp2 = (emp_t *) xcalloc("emp_t", 1);
     emp_t *emp3 = (emp_t *) xcalloc("emp_t", 1);
 
-    student_t *stud1 = (student_t *) xcalloc("student_t", 1);
-    student_t *stud2 = (student_t *) xcalloc("student_t", 1);
+    //student_t *stud1 = (student_t *) xcalloc("student_t", 1);
+    //student_t *stud2 = (student_t *) xcalloc("student_t", 1);
 
-    // do something with the data...
-    // printf(" \nSCENARIO 1 : *********** \n");
-    // mm_print_memory_usage(0);
-    // mm_print_block_usage();
-
-
-    // scanf("%d", &wait); 
-
-    // XFREE(emp1);
-    // XFREE(emp3);
-    // XFREE(stud2);
-    // printf(" \nSCENARIO 2 : *********** \n");
-    // mm_print_memory_usage(0);
-    // mm_print_block_usage();
-
-
-    // scanf("%d", &wait); 
-    
-    // XFREE(emp2);
-    // XFREE(stud1);
-    // printf(" \nSCENARIO 3 : *********** \n");
-    // mm_print_memory_usage(0);
-    // mm_print_block_usage();
     print_block_usage();
+
+    xfree(emp1);
+    print_memory_usage("emp_t");
+    xfree(emp2);
+    print_memory_usage("emp_t");
+    xfree(emp3);
+    //print_block_usage();
+    print_memory_usage("emp_t");
     return 0;
 }

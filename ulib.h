@@ -5,7 +5,9 @@ void initialization();
 void register_struct_info(char*,unsigned int);
 void print_registered_structs();
 void* xcalloc(char*,int);
+void xfree(void*);
 void print_block_usage();
+void print_memory_usage(const char* );
 #define INIT()\
     initialization()
 
