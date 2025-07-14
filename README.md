@@ -21,11 +21,17 @@ This project implements a custom heap memory manager in C, providing dynamic mem
 
 ```
 .
-├── heap_manager.h         # Main interface and implementation
-├── ulib.c / ulib.h        # Public API and utility macros
-├── my_ds/
-│   ├── dll.h / dll.c      # Doubly linked list implementation
-│   ├── heap.h / heap.c    # Heap (priority queue) implementation
+├── main.c # Test file to demonstrate usage
+├── heap_manager.c # Core memory management logic
+├── heap_manager.h # Struct definitions and public declarations
+├── ulib.h # User-facing API macros and wrappers
+├── a.out # Compiled binary (temporary build artifact)
+├── README.md # Project documentation
+├── my_ds/ # Data structures used by the memory manager
+│ ├── dll.c # Doubly linked list implementation
+│ ├── dll.h # DLL header
+│ ├── heap.c # Heap (priority queue) logic
+│ ├── heap.h # Heap interface
 ```
 
 ---
